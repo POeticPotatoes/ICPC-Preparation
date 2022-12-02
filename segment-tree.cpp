@@ -15,7 +15,7 @@ template <typename T>
 using vvv = vector<vv<T>>;
 
 
-#define MIN -1
+#define MIN -1 // Change this if negative
 class SegmentTree {
 private:
     int n;
@@ -27,7 +27,7 @@ private:
     int conquer(ll a, ll b) {
         if (a==MIN) return b;
         if (b==MIN) return a;
-        return min(a, b);
+        return min(a, b); // Change this if RMaxQ
     }
 
     void build(int p, int L, int R) {
@@ -73,7 +73,7 @@ private:
 
             ll lsubtree = (lazy[l(p)] != MIN)? lazy[l(p)] : st[l(p)];
             ll rsubtree = (lazy[r(p)] != MIN)? lazy[r(p)] : st[r(p)];
-            st[p] = (lsubtree <= rsubtree)? st[l(p)]: st[r(p)];
+            st[p] = (lsubtree <= rsubtree)? st[l(p)]: st[r(p)]; // Change if RMaxQ
         }
     }
 
