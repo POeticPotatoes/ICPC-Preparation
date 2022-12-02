@@ -1,0 +1,26 @@
+set nocompatible
+set showmatch
+set autoread
+set hlsearch
+set mouse=a
+set encoding=UTF-8
+set noswapfile
+set ignorecase
+set autoindent
+set tabstop=4
+set expandtab
+set shiftwidth=4
+set softtabstop=4
+set statusline+=%F
+set relativenumber
+set shell=bash\ -l
+set number
+syntax on
+
+" Convenient mappings
+inoremap { {}<left>
+inoremap {<BS> <nop>
+inoremap {} {}
+inoremap {<Esc> {<Esc>
+inoremap {<Enter> {<CR>}<Esc>ko
+nnoremap <silent> <Esc> :noh<cr>
