@@ -1,6 +1,5 @@
 set nocompatible
 set showmatch
-set autoread
 set hlsearch
 set mouse=a
 set encoding=UTF-8
@@ -11,9 +10,7 @@ set tabstop=4
 set expandtab
 set shiftwidth=4
 set softtabstop=4
-set statusline+=%F
 set relativenumber
-set shell=bash\ -l
 set number
 syntax on
 
