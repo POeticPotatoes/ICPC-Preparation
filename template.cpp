@@ -2,8 +2,8 @@
 using namespace std;
 
 #define IO cin.sync_with_stdio(false); cin.tie(0); cout.tie(0);
-#define FOR(i, a, b) for (ll (i) = (a); (i) < (b); (i)++)
-#define ROF(i, a, b) for (ll (i) = (a); (i) > (b); (i)--)
+#define FOR(i, a, b) for (ll i = (a); (i) < (b); (i)++)
+#define ROF(i, a, b) for (ll i = (a); (i) > (b); (i)--)
 #define REP(i, n) FOR(i, 0, n)
 #define all(x) (x).begin(), (x).end()
 #define eb emplace_back
