@@ -1,7 +1,6 @@
 ```c++
 // Geometry  =====================
 struct Point { double x, y; }                               // Change data type as required
-require: dot product, segment
 
 // Rotation
 int orientation(Point p, Point q, Point r) {                // Returns rotation of p->q->r
