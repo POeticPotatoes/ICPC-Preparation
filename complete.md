@@ -109,6 +109,10 @@ bool is[N];                             // Assume points are stored in some arra
 ll pf(ll x) { return x * x; }
 ll dis(int p, int q) { return pf(a[p].x - a[q].x) + pf(a[p].y - a[q].y); }
 ll sqr(int p, int q, int y) { return abs((a[q] - a[p]) * (a[y] - a[q])); }
+ll dot(int r, int q, int p) { return abs(
+        (a[q].x - a[p].x) * (a[r].x-a[p].x) +
+        (a[q].y - a[p].y) * (a[r].y-a[p].y));
+}
 
 ll get_longest() {  // 求凸包直径
     ll mx;
@@ -242,6 +246,24 @@ LL CRT(int k, LL* a, LL* r) {
   }
   return (ans % n + n) % n;
 }
+
+// Eratosthenes' Sieve
+int Eratosthenes(int n) {
+    int p = 0;
+    for (int i = 0; i <= n; ++i) is_prime[i] = 1;
+    is_prime[0] = is_prime[1] = 0;
+    for (int i = 2; i <= n; ++i) {
+        if (is_prime[i]) {
+          prime[p++] = i;
+          if ((long long)i * i <= n)
+              for (int j = i * i; j <= n; j += i)
+                  is_prime[j] = 0;
+        }
+    }
+    return p;
+}
+
+// 
 
 // Algorithms ====================
 // Bellman-Ford
