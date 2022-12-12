@@ -1,8 +1,7 @@
 ```c++
 // Geometry  =====================
-struct Point {
-    int x, y;                                               // Change data type as required
-};
+struct Point { double x, y; }                               // Change data type as required
+require: dot product, segment
 
 // Rotation
 int orientation(Point p, Point q, Point r) {                // Returns rotation of p->q->r
@@ -34,13 +33,218 @@ void test() {
     for (auto p: hull) printf("%d, %d\n", p.x, p.y);        // (0, 3), (0, 0), (3, 0), (3, 3)
 }
 
-// Algorithms ====================
+// Scan Line Area Filling (With segment tree)
+
+int lazy[maxn << 3];                                        // 标记了这条线段出现的次数
+double s[maxn << 3];
+
+struct node1 {
+  double l, r;
+  double sum;
+} cl[maxn << 3];                                            // 线段树 (segment tree)
+
+struct node2 {
+  double x, y1, y2;
+  int flag;
+} p[maxn << 3];                                             // 坐标 (coordinates)
+
+bool cmp(node2 a, node2 b) { return a.x < b.x; }
+
+void pushup(int rt) {
+    if (lazy[rt] > 0)
+        cl[rt].sum = cl[rt].r - cl[rt].l;
+    else
+        cl[rt].sum = cl[rt * 2].sum + cl[rt * 2 + 1].sum;
+}
+
+void build(int rt, int l, int r) {
+    if (r - l > 1) {
+        cl[rt].l = s[l], cl[rt].r = s[r];
+        build(rt * 2, l, (l + r) / 2);
+        build(rt * 2 + 1, (l + r) / 2, r);
+        pushup(rt);
+    } else
+        cl[rt].l = s[l], cl[rt].r = s[r], cl[rt].sum = 0;
+    return;
+}
+
+void update(int rt, double y1, double y2, int flag) {
+    if (cl[rt].l == y1 && cl[rt].r == y2) {
+        lazy[rt] += flag;
+        pushup(rt);
+        return;
+    }
+    if (cl[rt * 2].r > y1) update(rt * 2, y1, min(cl[rt * 2].r, y2), flag);
+    if (cl[rt * 2 + 1].l < y2)
+        update(rt * 2 + 1, max(cl[rt * 2 + 1].l, y1), y2, flag);
+    pushup(rt);
+}
+
+int test() {
+    int temp = 1, n;
+    double x1, y1, x2, y2, ans;
+    scanf("%d", &n)
+    ans = 0;
+    for (int i = 0; i < n; i++) {
+        scanf("%lf %lf %lf %lf", &x1, &y1, &x2, &y2);
+        p[i].x = x1; p[i].y1 = y1; p[i].y2 = y2; p[i].flag = 1;
+        p[i + n].x = x2; p[i + n].y1 = y1; p[i + n].y2 = y2; p[i + n].flag = -1;
+        s[i + 1] = y1; s[i + n + 1] = y2;
+    }
+    sort(s + 1, s + (2 * n + 1));
+    sort(p, p + 2 * n, cmp);
+    build(1, 1, 2 * n);
+    memset(lazy, 0, sizeof(lazy));
+    update(1, p[0].y1, p[0].y2, p[0].flag);
+    for (int i = 1; i < 2 * n; i++) {                           // Scan from 1 to 2n
+        ans += (p[i].x - p[i - 1].x) * cl[1].sum;
+        update(1, p[i].y1, p[i].y2, p[i].flag);
+    }
+    printf("%d", ans);
+}
+
+// 旋转卡壳 Rotary Jam (Longest diameter)
+int sta[N], top;                        // 将凸包上的节点编号存在栈里，第一个和最后一个节点编号相同
+bool is[N];                             // Assume points are stored in some array a[]
+
+ll pf(ll x) { return x * x; }
+ll dis(int p, int q) { return pf(a[p].x - a[q].x) + pf(a[p].y - a[q].y); }
+ll sqr(int p, int q, int y) { return abs((a[q] - a[p]) * (a[y] - a[q])); }
+
+ll get_longest() {  // 求凸包直径
+    ll mx;
+    int j = 3;
+    if (top < 4) {
+        mx = dis(sta[1], sta[2]);
+        return;
+    }
+    for (int i = 1; i <= top; ++i) {
+        while (sqr(sta[i], sta[i + 1], sta[j]) <=
+               sqr(sta[i], sta[i + 1], sta[j % top + 1]))
+            j = j % top + 1;
+        mx = max(mx, max(dis(sta[i + 1], sta[j]), dis(sta[i], sta[j])));
+    }
+}
+
+// Rotary Jam (Area)
+void get_biggest() {
+    int j = 3, l = 2, r = 2;
+    double t1, t2, t3, ans = 2e10;
+    for (int i = 1; i <= top; ++i) {
+        while (sqr(sta[i], sta[i + 1], sta[j]) <=
+               sqr(sta[i], sta[i + 1], sta[j % top + 1]))
+            j = j % top + 1;
+        while (dot(sta[i + 1], sta[r % top + 1], sta[i]) >=
+               dot(sta[i + 1], sta[r], sta[i]))
+        r = r % top + 1;
+        if (i == 1) l = r;
+        while (dot(sta[i + 1], sta[l % top + 1], sta[i]) <=
+               dot(sta[i + 1], sta[l], sta[i]))
+            l = l % top + 1;
+        t1 = sqr(sta[i], sta[i + 1], sta[j]);
+        t2 = dot(sta[i + 1], sta[r], sta[i]) + dot(sta[i + 1], sta[l], sta[i]);
+        t3 = dot(sta[i + 1], sta[i + 1], sta[i]);
+        ans = min(ans, t1 * t2 / t3);
+    }
+}
+
+// 半平面交 Half Plane Intersection
+friend bool operator<(seg x, seg y) {                       // Requires segment definition
+    db t1 = atan2((x.b - x.a).y, (x.b - x.a).x);
+    db t2 = atan2((y.b - y.a).y, (y.b - y.a).x);            // 求极角
+    if (fabs(t1 - t2) > eps)                                // 如果极角不等
+        return t1 < t2;
+    return (y.a - x.a) * (y.b - x.a) > eps;         // 判断向量x在y的哪边，令最靠左的排在最左边
+}
+
+void half_plane() {
+    // s[]是极角排序后的向量         s[] is a sorted array of vectors(segments)
+    // q[]是向量队列                q[] is a queue of vectors(segments)
+    // t[i]是s[i-1]与s[i]的交点     t[i] is the intersection of s[i-1] and s[i]
+    // 【码风】队列的范围是(l,r]     bounds are (l, r]
+    int l = 0, r = 0;
+    for (int i = 1; i <= n; ++i)
+        if (s[i] != s[i - 1]) {
+            // 注意要先检查队尾
+            while (r - l > 1 && (s[i].b - t[r]) * (s[i].a - t[r]) > eps)  
+                --r;
+            while (r - l > 1 && (s[i].b - t[l + 2]) * (s[i].a - t[l + 2]) > eps)  
+                ++l;
+            q[++r] = s[i];
+            if (r - l > 1) t[r] = its(q[r], q[r - 1]);  // 求新交点
+      }
+    while (r - l > 1 &&
+           (q[l + 1].b - t[r]) * (q[l + 1].a - t[r]) > eps)  // 注意删除多余元素
+        --r;
+    t[r + 1] = its(q[l + 1], q[r]);  // 再求出新的交点
+    ++r;
+}
+
+// 平面最近点对 Nearest point pair on a plane
+struct pt { int x, y, id; };                                // Custom definition of point
+struct cmp_x {                                              // Custom comparator for sort()
+    bool operator()(const pt& a, const pt& b) const {
+        return a.x < b.x || (a.x == b.x && a.y < b.y); }};
+struct cmp_y {
+    bool operator()(const pt& a, const pt& b) const { return a.y < b.y; }};
+int n;
+vector<pt> a;
+double mindist;
+int ansa, ansb;
+inline void upd_ans(const pt& a, const pt& b) {             // Calculates distance between points
+    double dist = sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + .0);
+    if (dist < mindist) mindist = dist, ansa = a.id, ansb = b.id;     // Update answer
+}
+
+void rec(int l, int r) {
+    if (r - l <= 3) {
+        for (int i = l; i <= r; ++i)
+            for (int j = i + 1; j <= r; ++j) upd_ans(a[i], a[j]);
+        sort(a + l, a + r + 1, &cmp_y);
+        return;
+    }
+
+    int m = (l + r) >> 1;
+    int midx = a[m].x;
+    rec(l, m), rec(m + 1, r);
+    inplace_merge(a + l, a + m + 1, a + r + 1, &cmp_y);
+
+    static pt t[MAXN];
+    int tsz = 0;
+    for (int i = l; i <= r; ++i)
+        if (abs(a[i].x - midx) < mindist) {
+            for (int j = tsz - 1; j >= 0 && a[i].y - t[j].y < mindist; --j)
+                upd_ans(a[i], t[j]);
+            t[tsz++] = a[i];
+        }
+}
+
+void sortPoints() {
+    sort(a, a+n, &cmp_x);
+    mindist = INF;
+    rec(0, n-1);
+}
+
+// Math ==========================
 // Extended Euclidean Algorithm
 void ex_gcd(ll a, ll b, ll &d, ll &x, ll &y){
     if(b == 0) y = 0, x = 1, d = a;
     else ex_gcd(b, a % b, d, y, x), y -= a / b * x;
 }
 
+// Chinese Remainder Theorem
+LL CRT(int k, LL* a, LL* r) {
+  LL n = 1, ans = 0;
+  for (int i = 1; i <= k; i++) n = n * r[i];
+  for (int i = 1; i <= k; i++) {
+    LL m = n / r[i], b, y;
+    exgcd(m, r[i], b, y);  // b * m mod r[i] = 1
+    ans = (ans + a[i] * m * b % n) % n;
+  }
+  return (ans % n + n) % n;
+}
+
+// Algorithms ====================
 // Bellman-Ford
 vector<int> BellmanFord(int graph[][3], int v, int e, int src) {
     vector<int> dis(v);
@@ -365,3 +569,5 @@ inoremap {<Esc> {<Esc>
 inoremap {<Enter> {<CR>}<Esc>ko
 nnoremap <silent> <Esc> :noh<cr>
 ```
+Compile Command
+`g++ -std=c++17 -Wshadow -Wall -o "${1}.out" "`
