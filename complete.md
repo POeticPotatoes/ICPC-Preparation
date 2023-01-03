@@ -1,18 +1,30 @@
+## Table of Contents
+* [Geometry](#geometry)
+* [Math](#math)
+* [Data Structures](#data-structures)
+* [Snippets](#snippets)
+* [Template](#template)
+* [VimConfig](#vimconfig)
+* [Compile Command](#compile-command)
+
+
+##
+
+##### Geometry
 ```c++
-// Geometry  =====================
-struct Point { double x, y; }                               // Change data type as required
+struct Point { double x, y; };                              // Change data type as required
 
 // Rotation
 int orientation(Point p, Point q, Point r) {                // Returns rotation of p->q->r
     auto val = (q.y - p.y) * (r.x - q.x) - 
                (q.x - p.x) * (r.y - q.y);
     if (!val) return 0;                                     // If the points are collinear
-    return 2-(val>0);                                       // 1: clockwise, 2: counterclockwise
+    return 2-(val>0);                                       // 1: clockwise
 }
 
 // Convex Hull (Jarvis' Algorithm)
 vector<Point> convexHull(Point points[], int n) {
-    if (n<3) return;                                        // Not a line
+    if (n<3) return vector<Point>();                                        // Not a line
     vector<Point> hull;
     int l = 0;
     REP(i, n) if (points[i].x < points[l].x) l=i;
@@ -194,7 +206,7 @@ int n;
 vector<pt> a;
 double mindist;
 int ansa, ansb;
-inline void upd_ans(const pt& a, const pt& b) {             // Calculates distance between points
+inline void upd_ans(const pt& a, const pt& b) {             // Calculates distance
     double dist = sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + .0);
     if (dist < mindist) mindist = dist, ansa = a.id, ansb = b.id;     // Update answer
 }
@@ -227,8 +239,9 @@ void sortPoints() {
     mindist = INF;
     rec(0, n-1);
 }
-
-// Math ==========================
+```
+##### Math
+```c++
 // Extended Euclidean Algorithm
 void ex_gcd(ll a, ll b, ll &d, ll &x, ll &y){
     if(b == 0) y = 0, x = 1, d = a;
@@ -269,7 +282,7 @@ int Eratosthenes(int n) {
 // Bellman-Ford
 vector<int> BellmanFord(int graph[][3], int v, int e, int src) {
     vector<int> dis(v);
-    memset(dis, inf, v);
+    fill(all(dis), v);
     dis[src] = 0;
     REP(i, v-1) REP(j, e)
         if (dis[graph[j][0]] != inf && dis[graph[j][0]] + graph[j][2] <
@@ -278,7 +291,7 @@ vector<int> BellmanFord(int graph[][3], int v, int e, int src) {
     REP(i, e) {
         int x = graph[i][0], y = graph[i][1], weight = graph[i][2];
         if (dis[x] != inf && dis[x] + weight < dis[y])      // Negative weight check
-            return null;
+            return vector<int>();
         return dis;
     }
 }
@@ -326,24 +339,25 @@ bool twoSAT() {
 
 // Levenshtein Distance
 int levenshtein(string s1, string s2) {
-    int l1=s1.size(), l2.size();
-    vv<int> dist(l2+1, vector<int>(l1+1));
-    REP(i, l1+1) dist[0][i] = i;
-    REP(i, l2+1) dist[i][0] = j;
-    FOR(j, 1, l1+1)
-        FOR(i, 1, l2+1) {
-            bool track = (s1[i-1] != s2[j-1])
-            int t=min((dist[i-1][j]+1), (dist[i][j-1]+1));
-            dist[i][j] = min(t, (dist[i-1][j-1]+track));
+    int l1=s1.size(), l2 = s2.size();
+    vv<int> D(l2+1, vector<int>(l1+1));
+    for (int i=0;i<=l1;i++) D[0][i] = i;
+    for (int j=0;j<=l2;j++) D[j][0] = j;
+    for (int j=1;j<=l1;j++)
+        for(int i=1;i<=l2;i++) {
+            int track = (s1[j-1] != s2[i-1]);
+            int t = min((D[i-1][j]+1), (D[i][j-1]+1));
+            D[i][j] = min(t, (D[i-1][j-1]+track));
         }
-    return dist[l2][l1];
+    return D[l2][l1];
 }
-
-// Data Structures ===============
+```
+#### Data Structures
+```c++
 // Sparse table
 int st[K+1][n]                                                  // K = logn/log2
 void build() {
-    FOR(i, 1, K) for (int j=0;j + (1<<i)) <= N; j++)
+    FOR(i, 1, K) for (int j=0;j + (1<<i) <= N; j++)
         st[i][k] = f(st[i-1][j], st[i-1][j + (1 << (i-1))]);    // f is the compare function
 }
 
@@ -360,14 +374,15 @@ ll rmq(int l, int r) {
     return f(st[i][l], st[i][r - (1<<i)+1]);
 }
 
-// Fenwick Trees 1-based Fenwick Tree
+// Fenwick Tree
+#define LSOne(S) ((S) & -(S))
 class FenwickTree {
 private:
     vll ft;
 public:
     FenwickTree(int m) {ft.assign(m+1, 0);}
     void build(const vll &f) {
-        int m=f.size(u);
+        int m=f.size();
         ft.assign(m+1, 0);
         for (int i=1;i<m;i++) {
             ft[i] += f[i];
@@ -520,7 +535,7 @@ void test() {
         st.RMQ(1, 3), st.RMQ(4, 7), st.RMQ(3, 4));
 }
 ```
-Snippets
+#### Snippets
 ```
 Built-in bit functions (prefixed with __builtin_)
 popcount - number of 1's          |  parity - whether the number of 1's is even
@@ -539,7 +554,7 @@ permutations(vll)    - n!          |  chain(item1, item2,...)  - combine items
 combinations(vll, i) - n choose i  |
 ```
 
-Template
+#### Template
 ```c++
 #include <bits/stdc++.h>
 using namespace std;
@@ -578,7 +593,7 @@ int main() {
     while (t--) solve();
 }
 ```
-VimConfig
+#### VimConfig
 ```
 syntax on
 set nocompatible, showmatch, hlsearch, noswapfile, ignorecase, autoindent, tabstop=4, 
@@ -590,5 +605,5 @@ inoremap {<Esc> {<Esc>
 inoremap {<Enter> {<CR>}<Esc>ko
 nnoremap <silent> <Esc> :noh<cr>
 ```
-Compile Command
-`g++ -std=c++17 -Wshadow -Wall -o "${1}.out" "`
+#### Compile Command  
+`g++ -std=c++17 -Wshadow -Wall -o "${1}.out" "${1}.cpp" -g -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG`
