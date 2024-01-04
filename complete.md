@@ -2,44 +2,45 @@
 <h2 align=center> Nanyang Technological university </h2>
 
 # Table of Contents
-* [String Algorithms](#string-algorithms)
-    * KMP
-    * Z Function
-    * Aho Corasick Algorithm
-    * Manacher's Algorithm
-* [Number Theory](#number-theory)
-    * Extended GCD
-    * Miller-Rabin Primality Test
-    * Sieve of Euler
-    * Totient Function
-    * Matrix Modular Power
-    * CRT
-    * Matrix Exponential
-* [Integer Sequences](#integer-sequences)
-* [Data Structures](#data-structures)
-    * CDQ
-    * Persistent Segment Tree
-    * Mo's Algorithm
-* [Graph Theory](#graph-theory)
-    * SCC
-    * Maxflow
-    * LCA
-    * HLD
-    * Topological Sorting
-    * Centroid Decomposition
-* [Geometry](#geometry)
-    * CHT
-    * Nearest Point Pair on a Plane
-    * Distance between Point and Plane
-* [Template](#template)
-* [VimConfig](#vimconfig)
-* [Compile Command](#compile-command)
+|||
+|-|-
+|<b>String Algorithms</b>
+|⠀⠀⠀KMP                                       |1
+|⠀⠀⠀Z Function                                |1
+|⠀⠀⠀Aho Corasick Algorithm                    |2
+|⠀⠀⠀Manacher's Algorithm                      |2
+|<b>Number Theory</b>
+|⠀⠀⠀Extended GCD                              |3
+|⠀⠀⠀Miller-Rabin Primality Test               |3
+|⠀⠀⠀Sieve of Euler                            |3
+|⠀⠀⠀Totient Function                          |3
+|⠀⠀⠀Matrix Modular Power                      |3
+|⠀⠀⠀CRT                                       |4
+|⠀⠀⠀Matrix Exponential                        |4
+|<b>Integer Sequences</b>                     |6
+|⠀⠀⠀Data Structures
+|⠀⠀⠀CDQ                                       |6
+|⠀⠀⠀Persistent Segment Tree                   |7
+|⠀⠀⠀Mo's Algorithm                            |8
+|<b>Graph Theory</b>
+|⠀⠀⠀SCC                                       |9
+|⠀⠀⠀Max Flow                                  |9
+|⠀⠀⠀Min Cost Max Flow                         |10
+|⠀⠀⠀LCA                                       |11
+|⠀⠀⠀HLD                                       |12
+|⠀⠀⠀Topological Sorting                       |12
+|⠀⠀⠀Centroid Decomposition                    |12
+|<b>Geometry</b>
+|⠀⠀⠀DP CHT                                    |14
+|⠀⠀⠀Convex Hull                               |14
+|⠀⠀⠀Nearest Point Pair on a Plane             |15
+|⠀⠀⠀Distance between Point and Plane          |16
+|<b>Template</b>                              |16
+|<b>VimConfig</b>                             |16
+|<b>Compile Command</b>                       |16
+|<b>Additional</b>
+|⠀⠀⠀Discrete Fourier Transform                |16
 
-<br>
-<br>
-<br>
-<br>
-<br>
 <br>
 <br>
 
@@ -1102,100 +1103,137 @@ void solve()
 	return;
 }
 ```
+#### Min Cost Max Flow
+```c++
+struct Edge
+{
+    int from, to, capacity, cost;
+};
+
+vector<vector<int>> adj, cost, capacity;
+
+const int INF = 1e9;
+
+void shortest_paths(int n, int v0, vector<int>& d, vector<int>& p) {
+    d.assign(n, INF);
+    d[v0] = 0;
+    vector<bool> inq(n, false);
+    queue<int> q;
+    q.push(v0);
+    p.assign(n, -1);
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        inq[u] = false;
+        for (int v : adj[u]) {
+            if (capacity[u][v] > 0 && d[v] > d[u] + cost[u][v]) {
+                d[v] = d[u] + cost[u][v];
+                p[v] = u;
+                if (!inq[v]) {
+                    inq[v] = true;
+                    q.push(v);
+                }
+            }
+        }
+    }
+}
+
+int min_cost_flow(int N, vector<Edge> edges, int K, int s, int t) {
+    adj.assign(N, vector<int>());
+    cost.assign(N, vector<int>(N, 0));
+    capacity.assign(N, vector<int>(N, 0));
+    for (Edge e : edges) {
+        adj[e.from].push_back(e.to);
+        adj[e.to].push_back(e.from);
+        cost[e.from][e.to] = e.cost;
+        cost[e.to][e.from] = -e.cost;
+        capacity[e.from][e.to] = e.capacity;
+    }
+
+    int flow = 0;
+    int cost = 0;
+    vector<int> d, p;
+    while (flow < K) {
+        shortest_paths(N, s, d, p);
+        if (d[t] == INF)
+            break;
+
+        // find max flow on that path
+        int f = K - flow;
+        int cur = t;
+        while (cur != s) {
+            f = min(f, capacity[p[cur]][cur]);
+            cur = p[cur];
+        }
+
+        // apply flow
+        flow += f;
+        cost += f * d[t];
+        cur = t;
+        while (cur != s) {
+            capacity[p[cur]][cur] -= f;
+            capacity[cur][p[cur]] += f;
+            cur = p[cur];
+        }
+    }
+
+    if (flow < K)
+        return -1;
+    else
+        return cost;
+}
+```
 
 #### LCA - Lowest Common Ancestor
 ```c++
-int T[100005] = {0};
-int L[100005] = {0};
-int P[100005][105] = {0};
-ll n;
+int n, l;
+vector<vector<int>> adj;
 
-int dfs(int node)
+int timer;
+vector<int> tin, tout;
+vector<vector<int>> up;
+
+void dfs(int v, int p)
 {
-	if(L[node]!=-1) return L[node];
-	if(T[node]==0) return L[node] = 0;
-	return L[node] = dfs(T[node])+1;
+    tin[v] = ++timer;
+    up[v][0] = p;
+    for (int i = 1; i <= l; ++i)
+        up[v][i] = up[up[v][i-1]][i-1];
+
+    for (int u : adj[v]) {
+        if (u != p)
+            dfs(u, v);
+    }
+
+    tout[v] = ++timer;
 }
 
-void process()
+bool is_ancestor(int u, int v)
 {
-	int i, j; 
-	
-	for (i = 1; i <= n; i++)
-		P[i][0] = T[i]; 
-	
-	for (j = 1; (1 << j) <= n; j++)
-		for (i = 1; i <= n; i++)
-			if (P[i][j - 1] != -1) P[i][j] = P[P[i][j - 1]][j - 1];
+    return tin[u] <= tin[v] && tout[u] >= tout[v];
 }
 
-int LCA(int p, int q)
-{ 
-	
-	int tmp, log, i; 
-
-	//swap
-	if (L[p] < L[q]) tmp = p, p = q, q = tmp; 
-	
-	for (log = 1; 1 << log <= L[p]; log++);
-		log--; 
-	
-	for (i = log; i >= 0; i--)
-	{
-		if (L[p] - (1 << i) >= L[q])
-		{
-			p = P[p][i]; 
-		}	
-	}
-	
-	if (p == q) return p;
-	
-	for (i = log; i >= 0; i--)
-	{
-		if (P[p][i] != -1 && P[p][i] != P[q][i])
-		{
-			p = P[p][i];
-			q = P[q][i]; 
-		}
-	}
-			
-	return T[p];
+int lca(int u, int v)
+{
+    if (is_ancestor(u, v))
+        return u;
+    if (is_ancestor(v, u))
+        return v;
+    for (int i = l; i >= 0; --i) {
+        if (!is_ancestor(up[u][i], v))
+            u = up[u][i];
+    }
+    return up[u][0];
 }
 
-void solve()
-{
-	memset(T,0,sizeof(T));
-	memset(L,-1,sizeof(L));
-	memset(P,-1,sizeof(P));
-	cin >> n;
-	for(int i=1;i<=n;i++)
-	{
-		int noc;
-		cin >> noc;
-		for(int c=0;c<noc;c++)
-		{
-			int tmp;
-			cin >> tmp;
-			T[tmp] = i;
-		}
-	}
-	
-	for(int i=1;i<=n;i++)
-	{
-		L[i] = dfs(i);
-	}
-	process();
-	
-	int q;
-	cin >> q;
-	for(int i=0;i<q;i++)
-	{
-		int a,b;
-		cin >> a >> b;
-		cout << LCA(a,b) << endl;
-	}
-	
-	return;
+void preprocess(int root) {
+    tin.resize(n);
+    tout.resize(n);
+    timer = 0;
+    l = ceil(log2(n));
+    up.assign(n, vector<int>(l + 1));
+    dfs(root, root);
 }
 ```
 
