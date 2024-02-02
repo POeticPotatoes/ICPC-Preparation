@@ -18,8 +18,9 @@
 |⠀⠀⠀CRT                                       |4
 |⠀⠀⠀Matrix Exponential                        |4
 |<b>Integer Sequences</b>                     |6
-|⠀⠀⠀Data Structures
+|<b>Data Structures
 |⠀⠀⠀CDQ                                       |6
+|⠀⠀⠀SOS DP                                    |6
 |⠀⠀⠀Persistent Segment Tree                   |7
 |⠀⠀⠀Mo's Algorithm                            |8
 |<b>Graph Theory</b>
@@ -687,6 +688,17 @@ void solve()
 }
 ```
 
+#### SOS DP
+```c++
+// Count how many of each A[i] match every bitmask
+for(int i = 0; i<(1<<N); ++i)
+	F[i] = freq[i];
+for(int i = 0;i < N; ++i) for(int mask = 0; mask < (1<<N); ++mask){
+	if(mask & (1<<i))
+		F[mask] += F[mask^(1<<i)];
+}
+```
+
 #### Persistent Segment Tree
 ```c++
 struct Node
@@ -876,19 +888,33 @@ void solve()
 #### SCC - Tarjan's Algorithm
 
 ```c++
-int cnt, scc;
-vll dfs_num, dfs_low, visited;
-stack<ll> St;
+vll ord(n+1), lo(n+1), comp(n+1), vis(n+1); // comp -> connected component i belongs to
+ll cnt=0, scc=0;                            // scc -> number of sccs
+stack<ll> add;
 
-void tarjanSCC(int u) {
-    dfs_low[u] = dfs_num[u] = cnt++;
-    St.push(u);
-    visited[u] = 1;
-    for (auto v: adj[u]) {
-        if (dfs_num[v]==UNVISITED) tarjanSCC(v);
-        if (visited[v]) dfs_low[u] = min(dfs_low[u], dfs_low[v]);
+function<void(ll)> tarjan = [&] (ll v) {
+    vis[v] = 1;
+    lo[v] = ord[v] = ++cnt;
+    add.push(v);
+
+    for (auto c: adj[v]) {
+        if (!vis[c]) {
+            tarjan(c);
+            lo[v] = min(lo[v], lo[c]);
+        } else if (vis[c]==1)               // remember this else if statement
+            lo[v] = min(lo[v], ord[c]);     // note this is ord and not lo
     }
-}
+
+    if (lo[v] == ord[v]) {
+        ll c = -1;
+        while (c != v) {
+            c = add.top(); add.pop();
+            comp[c] = scc;
+            vis[c] = 2;                   // vis here
+        }
+        scc++;
+    }
+};
 ```
 
 #### Max Flow - Dinic's Algorithm
